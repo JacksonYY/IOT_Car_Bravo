@@ -1,6 +1,12 @@
 package iot.mike.iotcarbravo.activities;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
+import org.json.JSONException;
+
 import h264.com.VView;
+
 import iot.mike.iotcarbravo.data.Action_Emotor;
 import iot.mike.iotcarbravo.data.Action_Steer;
 import iot.mike.iotcarbravo.data.ResultType;
@@ -20,10 +26,12 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.widget.Button;
 import android.widget.Toast;
@@ -38,6 +46,8 @@ public class NoKeyBoardActivity extends Activity {
 	private Button CameraLEFT_BTN;
 	private Button CameraRIGHT_BTN;
 	
+	private Button Start_BTN;
+	private Button End_BTN;
 	private OfflineMapView mapView;
 	private static VView videoView;
 	
@@ -57,6 +67,121 @@ public class NoKeyBoardActivity extends Activity {
 		}
 	});
 	
+	private Timer addSpeedTimer = null;
+	private class addSpeedTimerTask extends TimerTask {
+		//加速
+		@Override
+		public void run() {
+			Action_Emotor.getInstance().addSpeed();
+			try {
+				Log.e("fdk",Action_Emotor.getInstance().getOrder());
+				socketManager.sendOrder(Action_Emotor.getInstance().getOrder());
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} 
+		
+	}
+	
+	private Timer reduceSpeedTimer = null;
+	private class reduceSpeedTimerTask extends TimerTask {
+		//刹车减速
+		@Override
+		public void run() { 
+		Action_Emotor.getInstance().reduceSpeed();
+			try {
+				socketManager.sendOrder(Action_Emotor.getInstance().getOrder());
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+	}
+	
+	private Timer keepSpeedTimer = null;
+	private class keepSpeedTimerTask extends TimerTask {
+		//保持匀速
+		@Override
+		public void run() {
+			try {
+				socketManager.sendOrder(Action_Emotor.getInstance().getOrder());
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+	}
+	
+	private Timer rightTurnTimer = null;
+	private class rightTurnTimerTask extends TimerTask {
+		//摄像头右转
+		@Override
+		public void run() {
+			Action_Steer.getInstance().RightAngle();
+			try {
+				socketManager.sendOrder(Action_Steer.getInstance().getOrder());
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
+	}
+	
+	private Timer leftTurnTimer = null;
+	private class leftTurnTimerTask extends TimerTask {
+		//摄像头左转
+		@Override
+		public void run() {
+			Action_Steer.getInstance().LeftAngle();
+			try {
+				socketManager.sendOrder(Action_Steer.getInstance().getOrder());
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
+	}
+	
+	private Timer upTurnTimer = null;
+	private class upTurnTimerTask extends TimerTask {
+		//摄像头向上转
+		@Override
+		public void run() {
+			// TODO Auto-generated method stub
+			Action_Steer.getInstance().UpAngle();
+			try {
+				//Log.e("33",Action_Steer.getInstance().getOrder());
+				socketManager.sendOrder(Action_Steer.getInstance().getOrder());
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+	}
+	
+	private Timer downTurnTimer = null;
+	private class downTurnTimerTask extends TimerTask {
+		//摄像头向下转
+		@Override
+		public void run() {
+			// TODO Auto-generated method stub
+			Action_Steer.getInstance().DownAngle();
+			try {
+				socketManager.sendOrder(Action_Steer.getInstance().getOrder());
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+	}
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		if (SettingData.CtrlMode == SettingData.KeyBoard) {
@@ -66,6 +191,7 @@ public class NoKeyBoardActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_nokeyboard);
 		initNOKeyBoardViews();
+		socketManager.setKeyBoardActivityHandler(MainctivityHandler_NoKeyBoard);
 	}
 
 	@Override
@@ -80,6 +206,8 @@ public class NoKeyBoardActivity extends Activity {
 		initNOKeyBoardThread.start();
 		
 		createGravitySensor();
+		
+		socketManager.setKeyBoardActivityHandler(MainctivityHandler_NoKeyBoard);
 		
 		videoView = (VView)findViewById(R.id.videoView);
 		mapView = (OfflineMapView)findViewById(R.id.mapView);
@@ -114,8 +242,49 @@ public class NoKeyBoardActivity extends Activity {
 		CameraUP_BTN.setOnTouchListener(new MyOnTouchListener(socketManager,
 				Action_Emotor.getInstance(), 
 				Action_Steer.getInstance()));
+		
+		Start_BTN = (Button)findViewById(R.id.Start_BTN);
+		Start_BTN.setOnClickListener(new  MyClickListener(socketManager,
+				Action_Emotor.getInstance(),Action_Steer.getInstance()));
+		
+		End_BTN = (Button)findViewById(R.id.End_BTN);
+		End_BTN.setOnClickListener(new MyClickListener(socketManager, 
+				Action_Emotor.getInstance(),Action_Steer.getInstance()));
 	}
-	
+
+	private class MyClickListener implements OnClickListener {
+		private SocketManager socketManager;
+		private Action_Emotor action_Emotor;
+		private Action_Steer action_Steer;
+		
+		public MyClickListener(SocketManager socketManager,
+					Action_Emotor action_Emotor,
+					Action_Steer action_Steer) {
+			this.socketManager  = socketManager;
+			this.action_Emotor = action_Emotor;
+			this.action_Steer = action_Steer;
+		}
+		@Override
+		public void onClick(View v) {
+			// TODO Auto-generated method stub
+			switch (v.getId()) {
+			case R.id.Start_BTN:
+				Log.e("x","yaoyuanwansui");
+				socketManager.startLink();
+				action_Emotor.reset();
+				action_Steer.reset();
+				break;
+				
+			case R.id.End_BTN :
+				socketManager.endLink();
+				action_Emotor.reset();
+				action_Steer.reset();
+			default:
+				break;
+			}
+		}
+		
+	}
 	private class MyOnTouchListener implements OnTouchListener{
     	private SocketManager socketManager;
     	private Action_Emotor action_Emotor;
@@ -133,25 +302,74 @@ public class NoKeyBoardActivity extends Activity {
 		public boolean onTouch(View v, MotionEvent event) {
 			if (event.getAction() == KeyEvent.ACTION_DOWN) {
 				switch (v.getId()) {
-					case R.id.speedAVG_BTN:{
+					case R.id.speedAVG_BTN:{    //匀速
+						if(keepSpeedTimer != null) {
+							keepSpeedTimer.cancel();
+							keepSpeedTimer = null;
+						}
+						
+						keepSpeedTimer = new Timer();
+						keepSpeedTimer.schedule(new keepSpeedTimerTask(),0,500);
 						break;
 					}
-					case R.id.speedUP_BTN:{
+					
+					case R.id.speedUP_BTN:{		//加速
+						if(addSpeedTimer != null) {
+							addSpeedTimer.cancel();
+							addSpeedTimer = null;
+						}
+						addSpeedTimer = new Timer();
+						addSpeedTimer.schedule(new addSpeedTimerTask(), 0, 500);
 						break;
 					}
-					case R.id.stop_BTN:{
+					
+					case R.id.stop_BTN:{		//刹车减速
+						if(reduceSpeedTimer != null) {
+							reduceSpeedTimer.cancel();
+							reduceSpeedTimer = null;
+						}
+						reduceSpeedTimer = new Timer();
+						reduceSpeedTimer.schedule(new reduceSpeedTimerTask(),0,500);
 						break;
 					}
+					
 					case R.id.camera_DOWN_BTN:{
+						if(downTurnTimer != null) {
+							downTurnTimer.cancel();
+							downTurnTimer = null;
+						}
+						downTurnTimer = new Timer();
+						downTurnTimer.schedule(new downTurnTimerTask(), 0, 500);
 						break;
 					}
+					
 					case R.id.camera_LEFT_BTN:{
-						break;
+						if(leftTurnTimer != null) {
+							leftTurnTimer.cancel();
+							leftTurnTimer = null;
+						}
+						leftTurnTimer = new Timer();
+						leftTurnTimer.schedule(new leftTurnTimerTask(),0, 500);
+					break;
 					}
+					
 					case R.id.camera_RIGHT_BTN:{
+						if(rightTurnTimer != null) {
+							rightTurnTimer.cancel();
+							rightTurnTimer = null;
+						}
+						rightTurnTimer = new Timer();
+						rightTurnTimer.schedule(new reduceSpeedTimerTask(),0,500);
 						break;
 					}
+					
 					case R.id.camera_UP_BTN:{
+						if(upTurnTimer != null) {
+							upTurnTimer.cancel();
+							upTurnTimer = null;
+						}
+						upTurnTimer = new Timer();
+						upTurnTimer.schedule(new upTurnTimerTask(), 0,500);
 						break;
 					}
 					
@@ -159,24 +377,66 @@ public class NoKeyBoardActivity extends Activity {
 			}else if (event.getAction() == KeyEvent.ACTION_UP) {
 				switch (v.getId()) {
 					case R.id.speedAVG_BTN:{
+						if(keepSpeedTimer != null) {
+							keepSpeedTimer.cancel();
+							keepSpeedTimer = null;
+						}
+					
+						Action_Emotor.getInstance().reset();
 						break;
 					}
+					
 					case R.id.speedUP_BTN:{
+						if(addSpeedTimer != null) {
+							addSpeedTimer.cancel();
+							addSpeedTimer = null;
+						}
+						Action_Emotor.getInstance().reset();
 						break;
 					}
+					
 					case R.id.stop_BTN:{
+						if(reduceSpeedTimer != null) {
+							reduceSpeedTimer.cancel();
+							reduceSpeedTimer = null;
+						}
+						Action_Emotor.getInstance().reset();					
 						break;
 					}
+					
 					case R.id.camera_DOWN_BTN:{
+						if(downTurnTimer != null) {
+							downTurnTimer.cancel();
+							downTurnTimer = null;
+						}
+						Action_Steer.getInstance().reset();
 						break;
 					}
+					
 					case R.id.camera_LEFT_BTN:{
+						if(leftTurnTimer != null) {
+							leftTurnTimer.cancel();
+							leftTurnTimer = null;
+						}
+						Action_Steer.getInstance().reset();
 						break;
 					}
+					
 					case R.id.camera_RIGHT_BTN:{
+						if(rightTurnTimer != null) {
+							rightTurnTimer.cancel();
+							rightTurnTimer = null;
+						}
+						Action_Steer.getInstance().reset();
 						break;
 					}
+					
 					case R.id.camera_UP_BTN:{
+						if(upTurnTimer != null) {
+							upTurnTimer.cancel();
+							upTurnTimer = null;
+						}
+						Action_Steer.getInstance().reset();
 						break;
 					}
 					
@@ -264,7 +524,7 @@ public class NoKeyBoardActivity extends Activity {
                 x = e.values[SensorManager.DATA_X];
                 y = e.values[SensorManager.DATA_Y];
                 z = e.values[SensorManager.DATA_Z];
-                
+      
                 //-----------------------------------------------------
                 if (z > 8 && z < 0) {//判断手机的位置是否正确
 					Toast.makeText(getApplicationContext(), "请保持手机的垂直放置", Toast.LENGTH_SHORT).show();
@@ -303,6 +563,12 @@ public class NoKeyBoardActivity extends Activity {
 				}
                 Action_Emotor action_Emotor = Action_Emotor.getInstance();
                 action_Emotor.setX(TurnD);
+                try {
+					socketManager.sendOrder(Action_Emotor.getInstance().getOrder());
+				} catch (JSONException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}    // 向小车发送指令
                 //Log.e(String.valueOf(TurnD), String.valueOf(isTurnLeft));
                 //----------打印值
                 //Toast.makeText(getApplicationContext(), String.valueOf(x) + ":" +String.valueOf(y) + ":" + String.valueOf(z), Toast.LENGTH_SHORT).show();

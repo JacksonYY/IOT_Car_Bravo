@@ -3,6 +3,8 @@ package iot.mike.iotcarbravo.data;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.R.integer;
+
 
 public class Action_Steer {
 	private static class Action_EmotorHolder{
@@ -35,6 +37,39 @@ public class Action_Steer {
 		
 		public Param(){
 			A = 0; B = 0;
+		}
+		@Override
+		protected Object clone() throws CloneNotSupportedException {
+			// TODO Auto-generated method stub
+			return super.clone();
+		}
+		
+		public synchronized void RightAngle() {
+			A = A + 5;
+			if(A >= 60) {
+				A = 60;
+			}
+		}
+		
+		public synchronized void LeftAngle() {
+			A = A - 5;
+			if(A <= -60) {
+				A = -60;
+			}
+		}
+		
+		public synchronized void UpAngle() {
+			B = B + 5;
+			if(B >= 60) {
+				B = 60;
+			}
+		}
+		
+		public synchronized void downAngle() {
+			B = B - 5;
+			if(B <= -60) {
+				B = -60;
+			}
 		}
 	}
 	
@@ -80,4 +115,19 @@ public class Action_Steer {
 		return param.getB();
 	}
 	
+	public synchronized void RightAngle() {
+		param.RightAngle();
+	}
+	
+	public synchronized void LeftAngle() {
+		param.LeftAngle();
+	}
+	
+	public synchronized void UpAngle() {
+		param.UpAngle();
+	}
+	
+	public synchronized void DownAngle() {
+		param.downAngle();
+	}
 }

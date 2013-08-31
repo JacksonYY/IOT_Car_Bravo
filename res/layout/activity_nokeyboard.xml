@@ -15,24 +15,40 @@
         android:orientation="vertical" >
 
         <Button
+            android:id="@+id/Start_BTN"
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:textSize="14dp"
+            android:text="启动" />
+
+        <Button
+            android:id="@+id/End_BTN"
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:textSize="14dp"
+            android:text="关闭" />
+
+        <Button
             android:id="@+id/speedUP_BTN"
             android:layout_width="wrap_content"
-            android:layout_height="80dp"
+            android:layout_height="50dp"
+            android:textSize="14dp"
             android:text="加速" />
 
         <Button
             android:id="@+id/speedAVG_BTN"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="5"
+            android:layout_height="50dp"
+			android:textSize="14dp"
             android:text="匀速" />
 
         <Button
             android:id="@+id/stop_BTN"
             android:layout_width="wrap_content"
-            android:layout_height="100dp"
-            android:layout_gravity="center"
+            android:layout_height="50dp"
+            android:textSize="14dp"
             android:text="刹车" />
+
     </LinearLayout>
 
     <h264.com.VView

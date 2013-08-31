@@ -79,7 +79,7 @@ public class KeyBoradActivity extends Activity {
 	
 	
 	private Timer addSpeedTimer = null;
-	private class addSpeedTimerTask extends TimerTask{
+	public class addSpeedTimerTask extends TimerTask{
 		@Override
 		public void run() {
 			Action_Emotor.getInstance().addSpeed();
@@ -208,6 +208,8 @@ public class KeyBoradActivity extends Activity {
 				reduceSpeedTimer = null;
 			}
 			reduceSpeedTimer = new Timer();
+			// firstTime为Date类型,period为long  
+			// 从firstTime时刻开始，每隔period毫秒执行一次。
 			reduceSpeedTimer.schedule(new reduceSpeedTimerTask(), 0, 500);
 		}
 		//左键,左拐
@@ -253,12 +255,12 @@ public class KeyBoradActivity extends Activity {
 					e.printStackTrace();
 				}
 			}
-			if (keyCode == KeyEvent.KEYCODE_BACK) {
+			/*if (keyCode == KeyEvent.KEYCODE_BACK) {
 				socketManager.startLink();
 				Message message = new Message();
 				message.what = ResultType.StartLink;
 				MainctivityHandler_KeyBoard.sendMessage(message);
-			}
+			}*/
 		}
 		return true;
 	}
@@ -308,11 +310,14 @@ public class KeyBoradActivity extends Activity {
 			Action_Emotor.getInstance().reset();
 		}
 		return false;
+		
 	}	
 	
 	private Handler MainctivityHandler_KeyBoard = new Handler(){
 		@Override
 		public void handleMessage(Message message){
+			
+			//重写接收消息的方法
 			switch (message.what) {
 				case ResultType.Result_GPS:{
 					Result_GPS result_GPS = Result_GPS.getInstance();
